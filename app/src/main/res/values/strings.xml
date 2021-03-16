@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ServiceTestApp</string>
+    <string name="value_latitude">Latitude: %.2f</string>
+    <string name="value_longitude">Longitude: %.2f</string>
+</resources>
