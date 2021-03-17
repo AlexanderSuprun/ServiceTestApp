@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.servicetestapp">
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <application
+        android:name=".app.ServiceTestApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -12,6 +16,7 @@
         <service
             android:name=".service.LocationService"
             android:enabled="true"
+            android:foregroundServiceType="location"
             android:exported="false" />
 
         <activity android:name=".activity.MainActivity">

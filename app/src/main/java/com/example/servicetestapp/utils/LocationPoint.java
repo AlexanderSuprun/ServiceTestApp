@@ -1,5 +1,7 @@
 package com.example.servicetestapp.utils;
 
+import androidx.annotation.NonNull;
+
 public class LocationPoint {
 
     private double latitude;
@@ -24,5 +26,11 @@ public class LocationPoint {
 
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return latitude + " " + longitude;
     }
 }

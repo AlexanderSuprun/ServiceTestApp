@@ -12,14 +12,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.servicetestapp.R;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class LocatonRecyclerAdapter extends RecyclerView.Adapter<LocatonRecyclerAdapter.ViewHolder> {
 
     private final ArrayList<LocationPoint> locationPoints;
     private final Context context;
 
-    public LocatonRecyclerAdapter(ArrayList<LocationPoint> point, Context context) {
-        this.locationPoints = point;
+    public LocatonRecyclerAdapter(List<LocationPoint> point, Context context) {
+        this.locationPoints = (ArrayList<LocationPoint>) point;
         this.context = context;
     }
 

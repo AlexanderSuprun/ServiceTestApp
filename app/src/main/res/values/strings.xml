@@ -2,4 +2,7 @@
     <string name="app_name">ServiceTestApp</string>
     <string name="value_latitude">Latitude: %.2f</string>
     <string name="value_longitude">Longitude: %.2f</string>
+    <string name="button_title_allow">Allow</string>
+    <string name="button_title_cancel">Cancel</string>
+    <string name="rationale_message">Allow positioning by GPS to find your location</string>
 </resources>
