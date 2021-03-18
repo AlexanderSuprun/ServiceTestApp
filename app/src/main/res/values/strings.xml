@@ -5,4 +5,8 @@
     <string name="button_title_allow">Allow</string>
     <string name="button_title_cancel">Cancel</string>
     <string name="rationale_message">Allow positioning by GPS to find your location</string>
+    <string name="notification_content_text">Location service is running</string>
+    <string name="message_gps_disabled">GPS is disabled, your location cannot be determined</string>
+    <string name="button_title_ok">OK</string>
+    <string name="coordinates">Longitude: %1$.2f\nLatitude: %2$.2f</string>
 </resources>

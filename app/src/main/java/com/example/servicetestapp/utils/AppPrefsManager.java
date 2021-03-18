@@ -6,6 +6,10 @@ import android.content.SharedPreferences;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages {@link SharedPreferences}
+ */
+
 public class AppPrefsManager {
 
     public static final String PREFS_NAME = "com.example.servicetestapp.PREFS_NAME";
@@ -23,6 +27,9 @@ public class AppPrefsManager {
 
     public void saveNewLocation(LocationPoint location) {
         locationPoints = getLocations();
+        if (locationPoints.size() > 50) {
+            locationPoints.remove(0);
+        }
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < locationPoints.size(); i++) {
             stringBuilder.append(locationPoints.get(i).toString()).append(",");

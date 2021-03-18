@@ -14,12 +14,12 @@ import com.example.servicetestapp.R;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocatonRecyclerAdapter extends RecyclerView.Adapter<LocatonRecyclerAdapter.ViewHolder> {
+public class LocationRecyclerAdapter extends RecyclerView.Adapter<LocationRecyclerAdapter.ViewHolder> {
 
     private final ArrayList<LocationPoint> locationPoints;
     private final Context context;
 
-    public LocatonRecyclerAdapter(List<LocationPoint> point, Context context) {
+    public LocationRecyclerAdapter(List<LocationPoint> point, Context context) {
         this.locationPoints = (ArrayList<LocationPoint>) point;
         this.context = context;
     }

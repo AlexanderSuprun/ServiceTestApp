@@ -4,12 +4,12 @@ import androidx.annotation.NonNull;
 
 public class LocationPoint {
 
-    private double latitude;
     private double longitude;
+    private double latitude;
 
-    public LocationPoint(double latitude, double longitude) {
-        this.latitude = latitude;
+    public LocationPoint(double longitude, double latitude) {
         this.longitude = longitude;
+        this.latitude = latitude;
     }
 
     public double getLatitude() {
@@ -31,6 +31,6 @@ public class LocationPoint {
     @NonNull
     @Override
     public String toString() {
-        return latitude + " " + longitude;
+        return longitude + "" + latitude;
     }
 }
