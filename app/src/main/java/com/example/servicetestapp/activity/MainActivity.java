@@ -1,9 +1,6 @@
 package com.example.servicetestapp.activity;
 
 import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,20 +9,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,34 +36,33 @@ public class MainActivity extends AppCompatActivity {
     public static final int LOCATION_REQUEST_CODE = 100;
     public static final String BROADCAST_ACTION = "com.example.servicetestapp.BROADCAST_ACTION";
     public static final String EXTRA_LOCATION = "com.example.servicetestapp.EXTRA_LOCATION";
-    private List<LocationPoint> locationPointList;
     private AppPrefsManager prefsManager;
-    private RecyclerView recyclerView;
     private BroadcastReceiver receiver;
     private LocationService locationService;
     private ServiceConnection serviceConnection;
+    private List<LocationPoint> locationPointList;
+    private LocationRecyclerAdapter adapter;
+    private RecyclerView recyclerView;
+    private Location lastSavedLocation = new Location("");
     private boolean isBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        recyclerView = findViewById(R.id.rv_activity_main);
+
         prefsManager = ((ServiceTestApp) getApplication()).getPrefsManager();
         locationPointList = prefsManager.getLocations();
-        recyclerView.setAdapter(new LocationRecyclerAdapter(locationPointList, getBaseContext()));
-        recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
-                startService(new Intent(MainActivity.this, LocationService.class));
-            } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                showMessageRationale();
-            } else {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
-            }
+        if (locationPointList.size() > 0) {
+            lastSavedLocation.setLongitude(locationPointList.get(locationPointList.size() - 1).getLongitude());
+            lastSavedLocation.setLatitude(locationPointList.get(locationPointList.size() - 1).getLatitude());
         }
+
+        recyclerView = findViewById(R.id.rv_activity_main);
+        adapter = new LocationRecyclerAdapter(locationPointList, getBaseContext());
+        recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
+        recyclerView.setAdapter(adapter);
 
         serviceConnection = new ServiceConnection() {
             @Override
@@ -89,13 +81,30 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Location receivedLocation = intent.getParcelableExtra(EXTRA_LOCATION);
-                prefsManager.saveNewLocation(new LocationPoint(receivedLocation.getLongitude(),
-                        receivedLocation.getLatitude()));
+                if (lastSavedLocation.distanceTo(receivedLocation) > 10) {
+                    lastSavedLocation = receivedLocation;
+                    locationPointList.add(new LocationPoint(receivedLocation.getLongitude(),
+                            receivedLocation.getLatitude()));
+                    adapter.notifyItemInserted(adapter.getItemCount());
+                    recyclerView.scrollToPosition(adapter.getItemCount());
+                    prefsManager.saveNewLocation(new LocationPoint(receivedLocation.getLongitude(),
+                            receivedLocation.getLatitude()));
+                }
             }
         };
         registerReceiver(receiver, new IntentFilter(BROADCAST_ACTION));
-        bindService(new Intent(MainActivity.this, LocationService.class),
-                serviceConnection, BIND_AUTO_CREATE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                bindService(new Intent(MainActivity.this, LocationService.class),
+                        serviceConnection, BIND_AUTO_CREATE);
+            } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                showMessageRationale();
+            } else {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
+            }
+        }
     }
 
     @Override
@@ -104,6 +113,8 @@ public class MainActivity extends AppCompatActivity {
         if (isBound) {
             locationService.hideNotification();
         }
+        adapter.notifyDataSetChanged();
+        recyclerView.scrollToPosition(adapter.getItemCount());
     }
 
     @Override
@@ -126,7 +137,8 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == LOCATION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startService(new Intent(MainActivity.this, LocationService.class));
+                bindService(new Intent(MainActivity.this, LocationService.class),
+                        serviceConnection, BIND_AUTO_CREATE);
             } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 showMessageRationale();
             }

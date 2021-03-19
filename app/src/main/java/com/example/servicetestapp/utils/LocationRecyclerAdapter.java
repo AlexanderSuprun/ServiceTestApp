@@ -19,8 +19,8 @@ public class LocationRecyclerAdapter extends RecyclerView.Adapter<LocationRecycl
     private final ArrayList<LocationPoint> locationPoints;
     private final Context context;
 
-    public LocationRecyclerAdapter(List<LocationPoint> point, Context context) {
-        this.locationPoints = (ArrayList<LocationPoint>) point;
+    public LocationRecyclerAdapter(List<LocationPoint> points, Context context) {
+        this.locationPoints = (ArrayList<LocationPoint>) points;
         this.context = context;
     }
 
