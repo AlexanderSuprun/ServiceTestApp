@@ -75,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
                 linearLayoutManager.scrollToPosition(adapter.getItemCount());
             }
         };
-        registerReceiver(receiver, new IntentFilter(BROADCAST_ACTION));
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
@@ -93,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        registerReceiver(receiver, new IntentFilter(BROADCAST_ACTION));
         if (isBound) {
             locationService.hideNotification();
         }
@@ -103,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterReceiver(receiver);
         if (isBound) {
             locationService.showNotification();
         }
@@ -111,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(receiver);
         unbindService(serviceConnection);
     }
 
