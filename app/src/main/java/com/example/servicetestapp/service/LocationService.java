@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Color;
+import android.location.Location;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -17,19 +18,22 @@ import androidx.core.app.NotificationManagerCompat;
 
 import com.example.servicetestapp.R;
 import com.example.servicetestapp.activity.MainActivity;
+import com.example.servicetestapp.app.ServiceTestApp;
+import com.example.servicetestapp.utils.AppPrefsManager;
+import com.example.servicetestapp.utils.LocationPoint;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
+import java.util.List;
+
 /**
  * Foreground service which tracks location.
  */
 
 public class LocationService extends Service {
-
-    public static final String TAG = "TAG_SERVICE";
 
     public static final long UPDATE_INTERVAL = 10000;
     public static final long FASTEST_UPDATE_INTERVAL = 5000;
@@ -39,6 +43,8 @@ public class LocationService extends Service {
     private final ServiceBinder binder = new ServiceBinder();
     private FusedLocationProviderClient providerClient;
     private LocationCallback locationCallback;
+    private AppPrefsManager prefsManager;
+    private Location lastSavedLocation = new Location("");
     private boolean isNotificationVisible = false;
 
     public LocationService() {
@@ -47,6 +53,15 @@ public class LocationService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        prefsManager = ((ServiceTestApp) getApplication()).getPrefsManager();
+        List<LocationPoint> savedLocations = prefsManager.getLocations();
+
+        if (!savedLocations.isEmpty()) {
+            lastSavedLocation.setLongitude(savedLocations.get(savedLocations.size() - 1).getLongitude());
+            lastSavedLocation.setLatitude(savedLocations.get(savedLocations.size() - 1).getLatitude());
+        }
+
         providerClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
         LocationRequest request = new LocationRequest();
         request.setInterval(UPDATE_INTERVAL);
@@ -57,11 +72,15 @@ public class LocationService extends Service {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                sendBroadcast(new Intent(MainActivity.BROADCAST_ACTION)
-                        .putExtra(MainActivity.EXTRA_LOCATION, locationResult.getLastLocation()));
-                if (isNotificationVisible) {
-                    createNotification(locationResult.getLastLocation().getLongitude(),
-                            locationResult.getLastLocation().getLatitude());
+                if (lastSavedLocation.distanceTo(locationResult.getLastLocation()) > 10) {
+                    prefsManager.saveNewLocation(new LocationPoint(locationResult.getLastLocation().getLongitude(),
+                            locationResult.getLastLocation().getLatitude()));
+                    lastSavedLocation = locationResult.getLastLocation();
+                    sendBroadcast(new Intent(MainActivity.BROADCAST_ACTION));
+                    if (isNotificationVisible) {
+                        createNotification(locationResult.getLastLocation().getLongitude(),
+                                locationResult.getLastLocation().getLatitude());
+                    }
                 }
             }
         };
@@ -93,8 +112,6 @@ public class LocationService extends Service {
         this.providerClient.removeLocationUpdates(locationCallback);
     }
 
-    //Creates notification
-    //Pass 0.0 to create notification without coordinates
     private void createNotification(double longitude, double latitude) {
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
@@ -115,8 +132,8 @@ public class LocationService extends Service {
         PendingIntent contentIntent = PendingIntent.getActivity(
                 getApplicationContext(), 0, showTaskIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
-                .setContentTitle(getString(R.string.app_name))
-                .setContentText(getString(R.string.notification_content_text))
+                .setContentTitle(getString(R.string.notification_title_text))
+                .setContentText(getString(R.string.coordinates, longitude, latitude))
                 .setSmallIcon(R.drawable.ic_location_white_18dp)
                 .setOnlyAlertOnce(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -126,11 +143,6 @@ public class LocationService extends Service {
             builder.setChannelId(CHANNEL_ID);
         }
         startForeground(NOTIFICATION_ID, builder.build());
-
-        if (longitude != 0.0 && latitude != 0.0) {
-            builder.setContentText(getString(R.string.coordinates, longitude, latitude));
-            notificationManager.notify(NOTIFICATION_ID, builder.build());
-        }
     }
 
     public class ServiceBinder extends Binder {

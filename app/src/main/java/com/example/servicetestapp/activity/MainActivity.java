@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -35,15 +34,11 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int LOCATION_REQUEST_CODE = 100;
     public static final String BROADCAST_ACTION = "com.example.servicetestapp.BROADCAST_ACTION";
-    public static final String EXTRA_LOCATION = "com.example.servicetestapp.EXTRA_LOCATION";
-    private AppPrefsManager prefsManager;
     private BroadcastReceiver receiver;
     private LocationService locationService;
     private ServiceConnection serviceConnection;
-    private List<LocationPoint> locationPointList;
     private LocationRecyclerAdapter adapter;
-    private RecyclerView recyclerView;
-    private Location lastSavedLocation = new Location("");
+    private LinearLayoutManager linearLayoutManager;
     private boolean isBound = false;
 
     @Override
@@ -51,17 +46,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        prefsManager = ((ServiceTestApp) getApplication()).getPrefsManager();
-        locationPointList = prefsManager.getLocations();
+        AppPrefsManager prefsManager = ((ServiceTestApp) getApplication()).getPrefsManager();
+        List<LocationPoint> savedLocations = prefsManager.getLocations();
 
-        if (locationPointList.size() > 0) {
-            lastSavedLocation.setLongitude(locationPointList.get(locationPointList.size() - 1).getLongitude());
-            lastSavedLocation.setLatitude(locationPointList.get(locationPointList.size() - 1).getLatitude());
-        }
-
-        recyclerView = findViewById(R.id.rv_activity_main);
-        adapter = new LocationRecyclerAdapter(locationPointList, getBaseContext());
-        recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
+        RecyclerView recyclerView = findViewById(R.id.rv_activity_main);
+        adapter = new LocationRecyclerAdapter(savedLocations, getBaseContext());
+        linearLayoutManager = new LinearLayoutManager(getBaseContext());
+        recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
 
         serviceConnection = new ServiceConnection() {
@@ -80,16 +71,8 @@ public class MainActivity extends AppCompatActivity {
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Location receivedLocation = intent.getParcelableExtra(EXTRA_LOCATION);
-                if (lastSavedLocation.distanceTo(receivedLocation) > 10) {
-                    lastSavedLocation = receivedLocation;
-                    locationPointList.add(new LocationPoint(receivedLocation.getLongitude(),
-                            receivedLocation.getLatitude()));
-                    adapter.notifyItemInserted(adapter.getItemCount());
-                    recyclerView.scrollToPosition(adapter.getItemCount());
-                    prefsManager.saveNewLocation(new LocationPoint(receivedLocation.getLongitude(),
-                            receivedLocation.getLatitude()));
-                }
+                adapter.notifyItemInserted(adapter.getItemCount());
+                linearLayoutManager.scrollToPosition(adapter.getItemCount());
             }
         };
         registerReceiver(receiver, new IntentFilter(BROADCAST_ACTION));
@@ -114,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
             locationService.hideNotification();
         }
         adapter.notifyDataSetChanged();
-        recyclerView.scrollToPosition(adapter.getItemCount());
+        linearLayoutManager.scrollToPosition(adapter.getItemCount() - 1);
     }
 
     @Override
